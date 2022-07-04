@@ -1,73 +1,126 @@
-from PIL import Image
 import numpy as np
-import os
-from array import *
+import pickle
 from pathlib import Path
+import pandas as pd
+import numpy as np
+from PIL import Image
+import csv
+import os
 
-images_folder_path = r'C:\Users\r0583\Documents\Bootcamp\project\new_images\new_images'
-con_images_f_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\new_images\convert_image')
-
-
-# load an image
-def load_image(path):
-    img = Image.open(path)
-    return img
+cifar10_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar-10-python")
 
 
-# bring an image to a vector
-def flatten_image(img):
-    img = (np.array(img))
-    r = img[:, :, 0].flatten()
-    g = img[:, :, 1].flatten()
-    b = img[:, :, 2].flatten()
-    label = [1]
-    out = np.array(list(label) + list(r) + list(g) + list(b), np.uint8)
-    print()
+# load function: receive path and load the file into dict
+def load(file):
+    with open(file, "rb") as fo:
+        dict = pickle.load(fo, encoding="bytes")
+    return dict
+
+# insert the meta-data into csv: receive df and insert to csv
+def data_to_csv(df_of_all_meta_data):
+    df_of_all_meta_data.to_csv(csv_path)
+
+# organize the data: receives dict of data and bring the data into 4 arrays: labels, images name, images path and images themselves
+def organize_cifar10(data):
+        return pd.DataFrame({'labels':data[b'labels'] , 'image_name': data[b'filenames'], 'dataset': "cifar10" ,'batch/train/test': data[b'batch_label']})
+
+#############
+#  cifar10  #
+#############
+def cifar10():
+    cifar10_meta_data=pd.DataFrame({'labels':[], 'image_name': [], 'dataset': [],'batch/train/test': []} )
+
+    for batch in cifar10_path.glob('data_batch_*'):
+        # load the data
+        batch_data = load(batch)
+        # create array of images
+        images_array(batch_data,cifar10_images)
+        # organize the meta data
+
+        cifar10_meta_data=pd.concat([cifar10_meta_data,organize_cifar10(batch_data)])
+        # cifar10_meta_data.append(organize_cifar10(batch_data))
+
+    return cifar10_meta_data
 
 
-# bring a vector to an image
-def flat_image_to_metrix(flat_img):
-    flat_img = flat_img.reshape(3, 32, 32)
-    flat_img = flat_img.transpose(1, 2, 0)
-    return flat_img
+def images_array(data,array):
+    for i, flat_im in enumerate(data[b"data"]):
+        im_channels = []
+        for j in range(3):
+            im_channels.append(
+                flat_im[j * 1024: (j + 1) * 1024].reshape((32, 32))
+            )
+        # Save the original image
+        array.append(np.dstack((im_channels)))
 
+# delete images that are not from the chosen classes
+def delete_images(df):
+    num_of_deleted = 0
+    for i in range(len(cifar100_images)):
+        if i not in (df.index):
+            cifar100_images.pop(i - num_of_deleted)
+            num_of_deleted += 1
 
-# resize an image to image(32*32)
-def image_to_cifar10_format(image):
-    image = image.resize((32, 32), Image.ANTIALIAS)
+def organize_cifar100_chosen_data(train_data,test_data):
+    df1 = pd.DataFrame({"labels": train_data[b'coarse_labels'],"image_name": train_data[b'filenames'], "dataset":"cifar100", "batch/train/test": "train"})
+    df2 = pd.DataFrame({"labels": test_data[b'coarse_labels'],"image_name": test_data[b'filenames'], "dataset":"cifar100", "batch/train/test": "test"})
+    df = pd.concat([df1, df2])
+    # meta data of only chosen classes
+    cifar100_meta_data = df[df.labels.isin(chosen_classes_from_cifar100)]
+    # extract images from chosen classes
+    delete_images(df)
+    # cifar100_meta_data["dataset"]="cifar100"
+    return cifar100_meta_data
 
+def images_to_folder(images,images_names):
+        for i in range(0, len(images)):
+            img = Image.fromarray(images[i])
+            img.save(image_folder_path + "/" +images_names[i])
 
-# load all images from source folder , convert to cifar10 format and save in dest folder
-def images_to_cifar10_format(source_path, dest_path):
-    for dirname, dirnames, filenames in os.walk(source_path):
-        for filename in filenames:
-            if filename.endswith('.JPG') or filename.endswith('.jpg') or filename.endswith('.pmg'):
-                img = Image.open(os.path.join(dirname, filename))
-                img = image_to_cifar10_format(img)
-                img.save(dest_path + "/" + filename)
+##############
+#  cifar100  #
+##############
+def cifar100():
+    # load meta data
+    meta_data=load(str(cifar_100_path)+r'\meta')
+    # load data from train data file and test data file
+    train_data=load(str(cifar_100_path)+r'\train')
+    test_data=load(str(cifar_100_path)+r'\test')
 
+    # create array of images
+    images_array(train_data, cifar100_images)
+    images_array(test_data, cifar100_images)
 
-# load all images from source folder , convert to cifar10 format and save in dest folder, the function was token from github
-def images_to_cifar10_format2(source_path, dest_path):
-    data = array('B')
-    for dirname, dirnames, filenames in os.walk(r'C:\Users\r0583\Documents\Bootcamp\project\ima'):
-        for filename in filenames:
-            if filename.endswith('.JPG') or filename.endswith('.jpg') or filename.endswith('.pmg'):
-                im = Image.open(os.path.join(dirname, filename))
-                pix = im.load()
-                data = []
-                for color in range(0, 3):
-                    for x in range(0, 32):
-                        for y in range(0, 32):
-                            data.append(pix[x, y][color])
-                data = np.array(data)
-                data = flat_image_to_metrix(data)
-                data.save(dest_path + "/" + filename)
-
+    # extract and organize data from chosen classes
+    cifar100_meta_data=organize_cifar100_chosen_data(train_data,test_data)
+    return cifar100_meta_data
 
 def main():
-    images_to_cifar10_format(images_folder_path, con_images_f_path)
 
+    cifar10_meta_data=cifar10()  #return dataframes
+    cifar100_meta_data=cifar100()  #return dataframes
 
-if __name__ == "__main__":
+    #concat dataframes
+    df_of_all_meta_data=pd.concat([cifar10_meta_data,cifar100_meta_data])
+    images=cifar100_images+cifar10_images
+
+    #images_to_folder(images,df_of_all_meta_data[b'filenames'])
+
+    if (os.path.exists(csv_path) and os.path.isfile(csv_path)):
+        os.remove(csv_path)
+        print("file deleted")
+
+    data_to_csv(df_of_all_meta_data)
+
+if __name__=="__main__":
+
+    cifar10_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar-10-batches-py")
+    cifar_100_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar-100-python")
+    image_folder_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\project\images")
+    csv_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar.csv")
+
+    chosen_classes_from_cifar100 = [6, 8, 9, 14, 17]
+    images, labels, labels_name, images_names, batch, images_path = [], [], [], [], [], []
+    cifar100_images, cifar10_images = [], []
+
     main()
