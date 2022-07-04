@@ -23,10 +23,10 @@ def data_to_csv(df_of_all_meta_data):
 # organize the data: receives dict of data and bring the data into 4 arrays: labels, images name, images path and images themselves
 def organize_cifar10(data):
         return pd.DataFrame({'labels':data[b'labels'] , 'image_name': data[b'filenames'], 'dataset': "cifar10" ,'batch/train/test': data[b'batch_label']})
-
 #############
 #  cifar10  #
 #############
+#
 def cifar10():
     cifar10_meta_data=pd.DataFrame({'labels':[], 'image_name': [], 'dataset': [],'batch/train/test': []} )
 

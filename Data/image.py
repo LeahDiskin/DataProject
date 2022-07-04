@@ -6,7 +6,7 @@ from pathlib import Path
 
 images_folder_path = r'C:\Users\r0583\Documents\Bootcamp\project\new_images\new_images'
 con_images_f_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\new_images\convert_image')
-
+#
 
 # load an image
 def load_image(path):
