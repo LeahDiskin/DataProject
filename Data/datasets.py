@@ -99,6 +99,16 @@ def cifar100():
     # extract and organize data from chosen classes
     cifar100_meta_data=organize_cifar100_chosen_data(train_data,test_data)
     return cifar100_meta_data
+def split_data(path):
+    data_from_csv = pd.read_csv(path)
+    train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
+    return train,validation,test
+
+def split_data(path):
+    data_from_csv = pd.read_csv(path)
+    train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
+    return train,validation,test
+
 
 
 def main():
@@ -118,6 +128,8 @@ def main():
 
     data_to_csv(all_meta_data)
 
+    #split to train, test, validation
+    train, validation, test=split_data(csv_path)
 if __name__=="__main__":
 #insert to json
     cifar10_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar-10-batches-py")
