@@ -6,12 +6,10 @@ import numpy as np
 from PIL import Image
 import csv
 import os
-
-cifar10_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar-10-python")
-
+from typing import Dict
 
 # load function: receive path and load the file into dict
-def load(file):
+def load(file:str)->Dict:
     with open(file, "rb") as fo:
         dict = pickle.load(fo, encoding="bytes")
     return dict
@@ -20,21 +18,22 @@ def load(file):
 def data_to_csv(df_of_all_meta_data):
     df_of_all_meta_data.to_csv(csv_path)
 
-# organize the data: receives dict of data and bring the data into 4 arrays: labels, images name, images path and images themselves
+# organize the data:data to dataframe
 def organize_cifar10(data):
         return pd.DataFrame({'labels':data[b'labels'] , 'image_name': data[b'filenames'], 'dataset': "cifar10" ,'batch/train/test': data[b'batch_label']})
+
 #############
 #  cifar10  #
 #############
 #
-def cifar10():
-    cifar10_meta_data=pd.DataFrame({'labels':[], 'image_name': [], 'dataset': [],'batch/train/test': []} )
+def cifar10()->pd.DataFrame:
+    cifar10_meta_data=pd.DataFrame({'labels':[], 'image_name': [], 'dataset': [],'batch/train/test': []} )#function creat df
 
-    for batch in cifar10_path.glob('data_batch_*'):
+    for batch in cifar10_path.glob('data_batch_*'):#param
         # load the data
         batch_data = load(batch)
         # create array of images
-        images_array(batch_data,cifar10_images)
+        images_array(batch_data,cifar10_images)#לבדוק איפה Kלשמור תמונות
         # organize the meta data
 
         cifar10_meta_data=pd.concat([cifar10_meta_data,organize_cifar10(batch_data)])
@@ -95,10 +94,11 @@ def cifar100():
     cifar100_meta_data=organize_cifar100_chosen_data(train_data,test_data)
     return cifar100_meta_data
 
+
 def main():
 
-    cifar10_meta_data=cifar10()  #return dataframes
-    cifar100_meta_data=cifar100()  #return dataframes
+    cifar10_meta_data:pd.DataFrame=cifar10()  #return dataframes
+    cifar100_meta_data:pd.DataFrame=cifar100()  #return dataframes
 
     #concat dataframes
     df_of_all_meta_data=pd.concat([cifar10_meta_data,cifar100_meta_data])
@@ -119,7 +119,7 @@ if __name__=="__main__":
     image_folder_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\project\images")
     csv_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar.csv")
 
-    chosen_classes_from_cifar100 = [6, 8, 9, 14, 17]
+    chosen_classes_from_cifar100 = [6, 8, 9, 14, 17]#dict
     images, labels, labels_name, images_names, batch, images_path = [], [], [], [], [], []
     cifar100_images, cifar10_images = [], []
 
