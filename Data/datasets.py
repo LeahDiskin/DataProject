@@ -80,7 +80,7 @@ def organize_cifar100_chosen_data(train_data,test_data):
 def images_to_folder(images,images_names):
         for i in range(0, len(images)):
             img = Image.fromarray(images[i])
-            img.save(image_folder_path + "/" +images_names[i])
+            img.save(f"{image_folder_path}/{images_names[i]}")
 
 ##############
 #  cifar100  #
@@ -105,10 +105,6 @@ def split_data(path):
     train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
     return train,validation,test
 
-def split_data(path):
-    data_from_csv = pd.read_csv(path)
-    train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
-    return train,validation,test
 
 
 
