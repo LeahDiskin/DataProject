@@ -21,7 +21,7 @@ def load(file:str)->Dict:
 def data_to_csv(df_of_all_meta_data):
     df_of_all_meta_data.to_csv(csv_path)
 
-# organize the data:data to dataframe
+# organize the data: data to dataframe
 def organize_cifar10(data)->pd.DataFrame:
         return pd.DataFrame({labels_col_name:data[b'labels'] , images_col_name: data[b'filenames'], dataset_col_name: "cifar10" ,file_in_dataset_col_name: data[b'batch_label']})
 
@@ -99,6 +99,7 @@ def cifar100():
     # extract and organize data from chosen classes
     cifar100_meta_data=organize_cifar100_chosen_data(train_data,test_data)
     return cifar100_meta_data
+
 def split_data(path):
     data_from_csv = pd.read_csv(path)
     train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
