@@ -1,54 +1,37 @@
-import numpy as np
 import pickle
-from pathlib import Path
 import pandas as pd
 import numpy as np
 from PIL import Image
 import csv
 import os
 from typing import Dict
+from image import flat_image_to_PIL_Image
+import params as p
 
-images, labels, labels_name, images_names, batch, images_path = [], [], [], [], [], []
+
 cifar100_images, cifar10_images = [], []
+train_images, test_images = [], []
 
-# load function: receive path and load the file into dict
-def load(file:str)->Dict:
-    with open(file, "rb") as fo:
+# this function loads data
+def load(path:str)->Dict:
+    with open(path, "rb") as fo:
         dict = pickle.load(fo, encoding="bytes")
     return dict
 
-# insert the meta-data into csv: receive df and insert to csv
-def data_to_csv(df_of_all_meta_data):
-    df_of_all_meta_data.to_csv(csv_path)
-
-# organize the data: data to dataframe
-def organize_cifar10(data)->pd.DataFrame:
-        return pd.DataFrame({labels_col_name:data[b'labels'] , images_col_name: data[b'filenames'], dataset_col_name: "cifar10" ,file_in_dataset_col_name: data[b'batch_label']})
-
+# this function creats an empty df
 def create_df()->pd.DataFrame:
-    return pd.DataFrame({labels_col_name:[], images_col_name: [], dataset_col_name: [],file_in_dataset_col_name: []} )#function creat df
+    return pd.DataFrame({p.labels_col_name_df:[], p.images_col_name_df: [], p.dataset_col_name_df: [],p.path_col_name_df:[]} ) #function creat df
 
-#############
-#  cifar10  #
-#############
-#
-def cifar10()->pd.DataFrame:
-    cifar10_meta_data=create_df()
-    for batch in cifar10_path.glob('data_batch_*'):#param
-        # load the data
-        batch_data = load(batch)
-        # create array of images
-        images_array(batch_data,cifar10_images)#לבדוק איפה Kלשמור תמונות
-        # organize the meta data
+# this function inserts data into df
+def data_to_df(data:dict,labels_name,images_name,dataset,image_folder_path)->pd.DataFrame:
+    df= pd.DataFrame({p.labels_col_name_df:data[labels_name] , p.images_col_name_df: data[images_name], p.dataset_col_name_df: dataset,p.path_col_name_df:image_folder_path })
+    for i in df.index:
+        df[p.path_col_name_df][i]=fr"{image_folder_path}\{data[images_name][i]}"
+    return df
 
-        cifar10_meta_data=pd.concat([cifar10_meta_data,organize_cifar10(batch_data)])
-        # cifar10_meta_data.append(organize_cifar10(batch_data))
-
-    return cifar10_meta_data
-
-
-def images_array(data,array):
-    for i, flat_im in enumerate(data[b"data"]):
+# this function inserts images into a list
+def images_into_array(data:dict,array:list)->list:
+    for i, flat_im in enumerate(data[p.cifar_images]):
         im_channels = []
         for j in range(3):
             im_channels.append(
@@ -56,88 +39,123 @@ def images_array(data,array):
             )
         # Save the original image
         array.append(np.dstack((im_channels)))
+    return array
 
-# delete images that are not from the chosen classes
-def delete_images(df):
+# this function inserts data into csv
+def data_to_csv(data:pd.DataFrame,path):
+    if (os.path.exists(path) and os.path.isfile(path)):
+        os.remove(path)
+        print("file deleted")
+    data.to_csv(path)
+
+# this function inserts images into a folder
+def images_to_folder(images:list, images_names:list):
+    for i in range(0, len(images)):
+        img = Image.fromarray(images[i])
+        img.save(f"{p.image_folder_path}/{images_names[i][:-4]}.jpg")
+
+# this function changes the labels indexes that will fit cifar10
+def change_labels(labels:list)->list:
+    updated_class=[]
+    for index,value in labels.items():
+        updated_class.append(p.chosen_classes.index(value)+p.cifar10_num_of_classes)
+    return updated_class
+    #לסדר את הdict לייבלים והתאמה
+
+# this function deletes images that are not from the chosen classes
+def extract_images_of_chosen_classes(df:pd.DataFrame,original_num_of_items,images:list):
     num_of_deleted = 0
-    for i in range(len(cifar100_images)):
+    for i in range(original_num_of_items):
         if i not in (df.index):
-            cifar100_images.pop(i - num_of_deleted)
+            images.pop(i - num_of_deleted)
             num_of_deleted += 1
+    print()
 
-def organize_cifar100_chosen_data(train_data,test_data):
-    #I would like to change this two lines
-    train_df = pd.DataFrame({"labels": train_data[b'coarse_labels'],"image_name": train_data[b'filenames'], "dataset":"cifar100", "batch/train/test": "train"})
-    test_df = pd.DataFrame({"labels": test_data[b'coarse_labels'],"image_name": test_data[b'filenames'], "dataset":"cifar100", "batch/train/test": "test"})
-    cifar100_df = pd.concat([train_df, train_df])
-    # meta data of only chosen classes
-    cifar100_meta_data = cifar100_df[cifar100_df.labels.isin(chosen_classes_from_cifar100)]
-    # extract images from chosen classes
-    delete_images(cifar100_meta_data)
-    # cifar100_meta_data["dataset"]="cifar100"
-    return cifar100_meta_data
+# this function deletes data that is not from the chosen classes
+def extract_data(data:dict,images_array)->pd.DataFrame:
+    num_of_items=len(data[p.cifar100_labels])
+    # create array of images
+    images_into_array(data, images_array)
 
-def images_to_folder(images,images_names):
-        for i in range(0, len(images)):
-            img = Image.fromarray(images[i])
-            img.save(f"{image_folder_path}/{images_names[i]}")
+    cifar100_df:pd.DataFrame=data_to_df(data,p.cifar100_labels,p.cifar_images_name,"cifar100",p.image_folder_path)
 
-##############
-#  cifar100  #
-##############
-def cifar100():
+    # df of only chosen classes
+    cifar100_df_chosen_classes:pd.DataFrame = cifar100_df[cifar100_df.labels.isin(p.chosen_classes)]
+
+    # extract images from the chosen classes
+    extract_images_of_chosen_classes(cifar100_df_chosen_classes,num_of_items,images_array)
+
+    # change labels to fit cifar10 labels
+    cifar100_df_chosen_classes[p.labels_col_name_df]=change_labels(cifar100_df_chosen_classes[p.labels_col_name_df])
+
+
+    return cifar100_df_chosen_classes
+
+
+# this function loads cifar10, creates a list of all images and df of all the data
+def load_cifar10()->pd.DataFrame:
+    cifar10_data=create_df()
+
+    for batch in p.cifar10_path.glob('data_batch_*'):#param
+        # load the data
+        batch_data = load(batch)
+        # create array of images
+        images_into_array(batch_data,cifar10_images)#לבדוק איפה Kלשמור תמונות
+        # organize the data
+        batch_data:pd.DataFrame=data_to_df(batch_data,p.cifar10_labels,p.cifar_images_name,"cifar10",p.image_folder_path)
+        cifar10_data:pd.DataFrame=pd.concat([cifar10_data,batch_data])
+
+    # load test batch
+    test_batch=load(fr"{p.cifar10_path}\test_batch")
+    images_into_array(test_batch, cifar10_images)
+    test_batch: pd.DataFrame = data_to_df(test_batch, p.cifar10_labels, p.cifar_images_name, "cifar10",p.image_folder_path)
+    cifar10_data: pd.DataFrame = pd.concat([cifar10_data, test_batch])
+
+    return cifar10_data
+
+# this function loads cifar100, extract data from the chosen classes, creates a list of the images and df of the data
+def load_cifar100_chosen_classes()->pd.DataFrame:
 
     # load data from cifar100
-    meta_data=load(fr"{cifar_100_path}\meta")
-    train_data=load(fr"{cifar_100_path}\train")
-    test_data=load(fr"{cifar_100_path}\test")
+    meta_data:dict=load(fr"{p.cifar_100_path}\meta")
+    train_data:dict=load(fr"{p.cifar_100_path}\train")
+    test_data:dict=load(fr"{p.cifar_100_path}\test")
 
-    # create array of images
-    images_array(train_data, cifar100_images)
-    images_array(test_data, cifar100_images)
+    # df of data after it was filtered (by classes)
 
-    # extract and organize data from chosen classes
-    cifar100_meta_data=organize_cifar100_chosen_data(train_data,test_data)
-    return cifar100_meta_data
+    train_df=extract_data(train_data,train_images)
+    test_df=extract_data(test_data,test_images)
+    cifar100_df = pd.concat([train_df, test_df])
+    return cifar100_df
 
+
+# this function separates the data to train, validation and test
 def split_data(path):
     data_from_csv = pd.read_csv(path)
     train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
     return train,validation,test
 
 
-
-
 def main():
 
-    cifar10_meta_data:pd.DataFrame=cifar10()
-    cifar100_meta_data:pd.DataFrame=cifar100()
+    cifar10_data:pd.DataFrame=load_cifar10()
+    cifar100_data:pd.DataFrame=load_cifar100_chosen_classes()
+    cifar100_images=train_images+test_images
 
-    #concat dataframes
-    all_meta_data:pd.DataFrame=pd.concat([cifar10_meta_data,cifar100_meta_data])
-    images:np.array=cifar100_images+cifar10_images
+    # concat dataframes and images-lists
+    all_data:pd.DataFrame=pd.concat([cifar10_data,cifar100_data])
+    all_data.reset_index(inplace=True)
+    images:np.array=cifar10_images+cifar100_images
 
-    #images_to_folder(images,df_of_all_meta_data[b'filenames'])
+    images_to_folder(images,all_data[p.images_col_name_df])
 
-    if (os.path.exists(csv_path) and os.path.isfile(csv_path)):
-        os.remove(csv_path)
-        print("file deleted")
-
-    data_to_csv(all_meta_data)
+    data_to_csv(all_data,p.csv_path)
 
     #split to train, test, validation
-    train, validation, test=split_data(csv_path)
+    train, validation, test=split_data(p.csv_path)
+
+
 if __name__=="__main__":
-#insert to json
-    cifar10_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar-10-batches-py")
-    cifar_100_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar-100-python")
-    image_folder_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\project\images")
-    csv_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar.csv")
-
-    chosen_classes_from_cifar100 = [6, 8, 9, 14, 17] #dict
-    labels_col_name='labels'
-    images_col_name='image_name'
-    dataset_col_name='dataset'
-    file_in_dataset_col_name='batch/train/test'
-
     main()
+
+
