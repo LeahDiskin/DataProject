@@ -136,8 +136,9 @@ def split_data(path):
 
 def data_to_metrics(data:pd.DataFrame,csv_path):
     images=np.empty((data.shape[0],p.cifar10_image_size[0],p.cifar10_image_size[1],3),dtype='uint8')
-    for i in data:
-        images.append(extract_from_folder(i[p.path_col_name_df]))
+    images=np.empty
+    for row in data.iterrows():
+        images=np.append(images,extract_from_folder(row[p.path_col_name_df]), axis=0)
 
 def extract_column(df:pd.DataFrame,col_name):
     return df[col_name]

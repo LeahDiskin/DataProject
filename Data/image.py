@@ -78,6 +78,7 @@ def extract_from_folder(path)->np.ndarray:
 
 
 def main():
+    extract_from_folder(r"C:\Users\r0583\Downloads\images.jfif")
     print()
 
 
