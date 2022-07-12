@@ -5,8 +5,9 @@ from PIL import Image
 import csv
 import os
 from typing import Dict
-from image import flat_image_to_PIL_Image
+from image import flat_image_to_PIL_Image,extract_from_folder
 import params as p
+
 
 
 cifar100_images, cifar10_images = [], []
@@ -91,6 +92,20 @@ def extract_data(data:dict,images_array)->pd.DataFrame:
 
     return cifar100_df_chosen_classes
 
+# this function loads cifar100, extract data from the chosen classes, creates a list of the images and df of the data
+def load_cifar100_chosen_classes()->pd.DataFrame:
+
+    # load data from cifar100
+    meta_data:dict=load(fr"{p.cifar_100_path}\meta")
+    train_data:dict=load(fr"{p.cifar_100_path}\train")
+    test_data:dict=load(fr"{p.cifar_100_path}\test")
+
+    # df of data after it was filtered (by classes)
+
+    train_df=extract_data(train_data,train_images)
+    test_df=extract_data(test_data,test_images)
+    cifar100_df = pd.concat([train_df, test_df])
+    return cifar100_df
 
 # this function loads cifar10, creates a list of all images and df of all the data
 def load_cifar10()->pd.DataFrame:
@@ -113,31 +128,23 @@ def load_cifar10()->pd.DataFrame:
 
     return cifar10_data
 
-# this function loads cifar100, extract data from the chosen classes, creates a list of the images and df of the data
-def load_cifar100_chosen_classes()->pd.DataFrame:
-
-    # load data from cifar100
-    meta_data:dict=load(fr"{p.cifar_100_path}\meta")
-    train_data:dict=load(fr"{p.cifar_100_path}\train")
-    test_data:dict=load(fr"{p.cifar_100_path}\test")
-
-    # df of data after it was filtered (by classes)
-
-    train_df=extract_data(train_data,train_images)
-    test_df=extract_data(test_data,test_images)
-    cifar100_df = pd.concat([train_df, test_df])
-    return cifar100_df
-
-
 # this function separates the data to train, validation and test
 def split_data(path):
     data_from_csv = pd.read_csv(path)
     train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
     return train,validation,test
 
+def data_to_metrics(data:pd.DataFrame,csv_path):
+    images=np.empty((data.shape[0],p.cifar10_image_size[0],p.cifar10_image_size[1],3),dtype='uint8')
+    for i in data:
+        images.append(extract_from_folder(i[p.path_col_name_df]))
+
+def extract_column(df:pd.DataFrame,col_name):
+    return df[col_name]
 
 def main():
 
+    # load cifar10 and cifar100
     cifar10_data:pd.DataFrame=load_cifar10()
     cifar100_data:pd.DataFrame=load_cifar100_chosen_classes()
     cifar100_images=train_images+test_images
@@ -147,12 +154,30 @@ def main():
     all_data.reset_index(inplace=True)
     images:np.array=cifar10_images+cifar100_images
 
-    images_to_folder(images,all_data[p.images_col_name_df])
+    # insert images into a folder
+    # images_to_folder(images,all_data[p.images_col_name_df])
 
-    data_to_csv(all_data,p.csv_path)
+    # insert the data into csv file
+    # data_to_csv(all_data,p.csv_path)
 
     #split to train, test, validation
     train, validation, test=split_data(p.csv_path)
+
+    # create matrix for each part (train, validation and test)
+    x_train:np.ndarray=data_to_metrics(train,p.csv_path)
+    x_validation:np.ndarray=data_to_metrics(validation,p.csv_path)
+    x_test:np.ndarray=data_to_metrics(test,p.csv_path)
+
+    y_train=extract_column(train,p.labels_col_name_df)
+    y_validation=extract_column(validation,p.labels_col_name_df)
+    y_test=extract_column(test,p.labels_col_name_df)
+
+    np.savez(p.binary_file_path, x_train=x_train[:1000], y_train=y_train[:1000],x_validation=x_validation[:1000]
+             ,y_validation=y_validation[:1000],x_test=x_test[:1000],
+             y_test=y_test[:1000])
+
+
+
 
 
 if __name__=="__main__":

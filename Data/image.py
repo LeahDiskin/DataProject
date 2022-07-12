@@ -64,12 +64,16 @@ def image_to_folder(image:Image,image_name):
 
 # this function receives col name and value and returns the first row that the value in the col equals to the value that was sent
 # אם רוצים לשנות שמקב שם של עמודה ומחפש מה האינדקס ומחפש לפיו
-def extract_from_csv(path,by_col:int,value)->list:
+def find_in_csv(path,by_col:int,value)->list:
     csv_file = csv.reader(open(path, "r"))
     for row in csv_file:
         if row[by_col]==value:
             return row
     return []
+def extract_from_folder(path)->np.ndarray:
+    image=plt.imread(path)
+    return image
+
 
 
 
