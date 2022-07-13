@@ -9,9 +9,7 @@ images_folder_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\images2')
 con_images_f_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\convert_image')
 new_images_csv_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\new_images.csv')
 new_images_folder_path=Path(r'C:\Users\r0583\Documents\Bootcamp\project\new_images')
-binary_file_path=Path(r"C:\Users\r0583\Documents\Bootcamp\project\images_matrix.npz")
-
-
+binary_file_path=Path(r"C:\Users\r0583\Documents\Bootcamp\project\test.npz")
 
 chosen_classes = [6, 8, 9, 14, 17]
 

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 # this function loads an image
 def load_image(path)->Image:
-    img = Image.open(path)
+    img = plt.imread(path) # Image.open(path)
     return img
 
 

@@ -5,10 +5,8 @@ from PIL import Image
 import csv
 import os
 from typing import Dict
-from image import flat_image_to_PIL_Image,extract_from_folder
+from image import flat_image_to_PIL_Image, extract_from_folder, load_image
 import params as p
-
-
 
 cifar100_images, cifar10_images = [], []
 train_images, test_images = [], []
@@ -53,7 +51,7 @@ def data_to_csv(data:pd.DataFrame,path):
 def images_to_folder(images:list, images_names:list):
     for i in range(0, len(images)):
         img = Image.fromarray(images[i])
-        img.save(f"{p.image_folder_path}/{images_names[i][:-4]}.jpg")
+        img.save(f"{p.image_folder_path}/{images_names[i]}", format="png")
 
 # this function changes the labels indexes that will fit cifar10
 def change_labels(labels:list)->list:
@@ -134,11 +132,13 @@ def split_data(path):
     train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
     return train,validation,test
 
-def data_to_metrics(data:pd.DataFrame,csv_path):
-    images=np.empty((data.shape[0],p.cifar10_image_size[0],p.cifar10_image_size[1],3),dtype='uint8')
-    images=np.empty
+def data_to_metrics(data:pd.DataFrame)->np.ndarray:
+    # images=np.empty((data.shape[0],p.cifar10_image_size[0],p.cifar10_image_size[1],3),dtype='uint8')
+    images=[]
     for row in data.iterrows():
-        images=np.append(images,extract_from_folder(row[p.path_col_name_df]), axis=0)
+        images.append(load_image(row[1][p.path_col_name_df]))
+    img=np.array(images)
+    return img
 
 def extract_column(df:pd.DataFrame,col_name):
     return df[col_name]
@@ -156,26 +156,30 @@ def main():
     images:np.array=cifar10_images+cifar100_images
 
     # insert images into a folder
-    # images_to_folder(images,all_data[p.images_col_name_df])
+    images_to_folder(images,all_data[p.images_col_name_df])
 
     # insert the data into csv file
-    # data_to_csv(all_data,p.csv_path)
+    data_to_csv(all_data,p.csv_path)
 
     #split to train, test, validation
     train, validation, test=split_data(p.csv_path)
 
     # create matrix for each part (train, validation and test)
-    x_train:np.ndarray=data_to_metrics(train,p.csv_path)
-    x_validation:np.ndarray=data_to_metrics(validation,p.csv_path)
-    x_test:np.ndarray=data_to_metrics(test,p.csv_path)
-
+    x_train:np.ndarray=data_to_metrics(train)
     y_train=extract_column(train,p.labels_col_name_df)
-    y_validation=extract_column(validation,p.labels_col_name_df)
-    y_test=extract_column(test,p.labels_col_name_df)
+    np.savez(p.binary_file_path, x_train=x_train[:10], y_train=y_train[:10])
 
-    np.savez(p.binary_file_path, x_train=x_train[:1000], y_train=y_train[:1000],x_validation=x_validation[:1000]
-             ,y_validation=y_validation[:1000],x_test=x_test[:1000],
-             y_test=y_test[:1000])
+    x_validation:np.ndarray=data_to_metrics(validation)
+    y_validation=extract_column(validation,p.labels_col_name_df)
+    np.savez(p.binary_file_path, x_validation=x_validation[:10], y_validation=y_validation[:10])
+
+    x_test:np.ndarray=data_to_metrics(test)
+    y_test=extract_column(test,p.labels_col_name_df)
+    np.savez(p.binary_file_path, x_test=x_test[:10], y_test=y_test[:10])
+
+    npzfile = np.load(r"C:\Users\r0583\Documents\Bootcamp\project\test.npz")
+    print(npzfile.files)
+
 
 
 
