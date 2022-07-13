@@ -132,7 +132,11 @@ def split_data(path):
     train, validation, test = np.split(data_from_csv.sample(frac=1, random_state=42),[int(.6*len(data_from_csv)), int(.8*len(data_from_csv))])
     return train,validation,test
 
+
+
+
 def data_to_metrics(data:pd.DataFrame)->np.ndarray:
+
     # images=np.empty((data.shape[0],p.cifar10_image_size[0],p.cifar10_image_size[1],3),dtype='uint8')
     images=[]
     for row in data.iterrows():
@@ -146,6 +150,19 @@ def extract_column(df:pd.DataFrame,col_name):
 def main():
 
     # load cifar10 and cifar100
+
+    # cifar10_data:pd.DataFrame=load_cifar10()
+    # cifar100_data:pd.DataFrame=load_cifar100_chosen_classes()
+    # cifar100_images=train_images+test_images
+    #
+    # # concat dataframes and images-lists
+    # all_data:pd.DataFrame=pd.concat([cifar10_data,cifar100_data])
+    # all_data.reset_index(inplace=True)
+    # images:np.array=cifar10_images+cifar100_images
+    #
+    # # insert images into a folder
+    # images_to_folder(images,all_data[p.images_col_name_df])
+
     cifar10_data:pd.DataFrame=load_cifar10()
     cifar100_data:pd.DataFrame=load_cifar100_chosen_classes()
     cifar100_images=train_images+test_images
@@ -157,6 +174,7 @@ def main():
 
     # insert images into a folder
     images_to_folder(images,all_data[p.images_col_name_df])
+
 
     # insert the data into csv file
     data_to_csv(all_data,p.csv_path)
@@ -187,5 +205,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
-
