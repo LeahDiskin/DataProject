@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBox
 from PyQt5.QtGui import QIcon, QPixmap
 import sys
 import params as p
-import image
+from Data.image import image_to_cifar10_format
 
 class PhotoLabel(QLabel):
 
@@ -99,10 +99,13 @@ class MainWindow(QMainWindow,QWidget):
         self.photo.setPixmap(QPixmap(filename))
 
 
-    def save_image(self):
+    def save_image(self,event):
         # img=
         # image.image_to_cifar10_format()
         print("save")
+        print(self.photo.toPlainText())
+        #image_to_cifar10_format()
+        #image_datails_to_csv()
         label=self.select_label.currentText()
         print(label)
     def get_prediction(self):

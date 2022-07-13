@@ -50,7 +50,7 @@ def df_for_one_image(label,image_name,path)->pd.DataFrame:
 # this function receives details of an image and add them into a csv
 def image_datails_to_csv(label,image_name,image_path,csv_path):
     # check if image name already exists in csv
-    if len(extract_from_csv(csv_path,1,image_name))!=0:
+    if len(find_in_csv(csv_path,p.images_col_name_df,image_name))!=0:
         raise Exception("Image name already exists")
     list = [label,image_name,image_path]
     with open(p.new_images_csv_path, 'a',newline='') as f:
