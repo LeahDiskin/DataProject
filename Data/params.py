@@ -1,15 +1,15 @@
 from pathlib import Path
 
 # pathes
-cifar10_path = Path(r"C:\Users\r0583\Documents\Bootcamp\project\cifar-10-batches-py")
-cifar_100_path = Path(r"C:\Users\r0583\Documents\Bootcamp\project\cifar-100-python")
-image_folder_path = Path(r"C:\Users\r0583\Documents\Bootcamp\project\images")
-csv_path = Path(r"C:\Users\r0583\Documents\Bootcamp\project\cifar.csv")
-images_folder_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\images2')
-con_images_f_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\convert_image')
-new_images_csv_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\new_images.csv')
-new_images_folder_path=Path(r'C:\Users\r0583\Documents\Bootcamp\project\new_images')
-binary_file_path=Path(r"C:\Users\r0583\Documents\Bootcamp\project\images_matrix.npz")
+cifar10_path = Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\cifar-10-batches-py")
+cifar_100_path = Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\cifar-100-python")
+image_folder_path = Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\images")
+csv_path = Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\cifar.csv")
+#images_folder_path = Path(r'C:\Users\r0583\Documents\Bootcamp\project\images2')
+con_images_f_path = Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\convert_image")
+new_images_csv_path = Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\new_images.csv")
+new_images_folder_path=Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\new_images")
+binary_file_path=Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\images_matrix.npz")
 
 
 
