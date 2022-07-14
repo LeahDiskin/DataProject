@@ -140,7 +140,7 @@ def split_data(path):
     cifar100_df = data_from_csv[data_from_csv[p.dataset_col_name_df] == "cifar100"]
     # train/validation/test - cifar100
     train_cifar100, validation_cifar100, test_cifar100 = np.split(cifar100_df.sample(frac=1, random_state=42),[int(.6 * len(cifar100_df)), int(.8 * len(cifar100_df))])
-    return pd.concat([train_cifar10,train_cifar100]),pd.concat([validation_cifar10,validation_cifar100]),pd.concat([test_cifar10,test_cifar10])
+    return pd.concat([train_cifar10,train_cifar100]),pd.concat([validation_cifar10,validation_cifar100]),pd.concat([test_cifar10,test_cifar100])
 
 
 
@@ -175,24 +175,24 @@ def main():
     # # insert the data into csv file
     # data_to_csv(all_data,p.csv_path)
 
-    #split to train, test, validation
-    # train, validation, test=split_data(p.csv_path)
+    # split to train, test, validation
+    train, validation, test=split_data(p.csv_path)
+
+    # create matrix for each part (train, validation and test)
+    x_train:np.ndarray=data_to_metrics(train)
+    y_train=extract_column(train,p.labels_col_name_df)
+    # np.savez(p.binary_file_path, x_train=x_train, y_train=y_train)
+
+    x_validation:np.ndarray=data_to_metrics(validation)
+    y_validation=extract_column(validation,p.labels_col_name_df)
+    # np.savez(p.binary_file_path, x_validation=x_validation[:1000], y_validation=y_validation[:1000])
     #
-    # # create matrix for each part (train, validation and test)
-    # x_train:np.ndarray=data_to_metrics(train)
-    # y_train=extract_column(train,p.labels_col_name_df)
-    # # np.savez(p.binary_file_path, x_train=x_train, y_train=y_train)
-    #
-    # x_validation:np.ndarray=data_to_metrics(validation)
-    # y_validation=extract_column(validation,p.labels_col_name_df)
-    # # np.savez(p.binary_file_path, x_validation=x_validation[:1000], y_validation=y_validation[:1000])
-    # #
-    # x_test:np.ndarray=data_to_metrics(test)
-    # y_test=extract_column(test,p.labels_col_name_df)
-    # # np.savez(p.binary_file_path, x_test=x_test[:1000], y_test=y_test[:1000])
-    # np.savez(p.binary_file_path, x_train=x_train, y_train=y_train, x_validation=x_validation, y_validation=y_validation, x_test=x_test,
-    #          y_test=y_test)
-    #
+    x_test:np.ndarray=data_to_metrics(test)
+    y_test=extract_column(test,p.labels_col_name_df)
+    # np.savez(p.binary_file_path, x_test=x_test[:1000], y_test=y_test[:1000])
+    np.savez(p.binary_file_path, x_train=x_train, y_train=y_train, x_validation=x_validation, y_validation=y_validation, x_test=x_test,
+             y_test=y_test)
+
     #
     # npzfile = np.load(r"C:\Users\r0583\Documents\Bootcamp\project\test.npz")
     # print(npzfile.files)
