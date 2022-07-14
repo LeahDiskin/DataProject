@@ -8,11 +8,11 @@ import pandas as pd
 from csv import writer
 import params as p
 import matplotlib.pyplot as plt
-
+import cv2
 
 # this function loads an image
 def load_image(path)->Image:
-    img = Image.open(path)
+    img = cv2.imread(path)
     return img
 
 
