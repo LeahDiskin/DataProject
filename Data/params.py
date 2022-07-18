@@ -10,7 +10,7 @@ csv_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\cifar.csv")
 con_images_f_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\convert_image")
 new_images_csv_path = Path(r"C:\Users\user1\Documents\bootcamp\Project\new_images.csv")
 new_images_folder_path=Path(r"C:\Users\user1\Documents\bootcamp\Project\new_images")
-binary_file_path=Path(r"C:\Users\user1\Documents\bootcamp\Project\images_matrix.npz")
+binary_file_path=Path(r"C:\Users\user1\Documents\bootcamp\Project\data.npz")
 
 
 

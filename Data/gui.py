@@ -116,7 +116,7 @@ w = MainWindow()
 w.show()
 app.exec_()
 
-# load all images from source folder , convert to cifar10 format and save in dest folder
+#load all images from source folder , convert to cifar10 format and save in dest folder
 # def images_to_cifar10_format(source_path, dest_path):
 #     for dirname, dirnames, filenames in os.walk(source_path):
 #         for filename in filenames:
@@ -124,3 +124,60 @@ app.exec_()
 #                 img = Image.open(os.path.join(dirname, filename))
 #                 img = image_to_cifar10_format(img)
 #                 img.save(dest_path + "/" + filename)
+
+import sys
+
+from PySide2.QtCore import QRect, QSize, QPoint
+
+from PySide2.QtWidgets import QLabel, QRubberBand, QApplication, QWidget
+
+from PySide2.QtGui import QPixmap, QMouseEvent
+
+
+class QExampleLabel(QLabel):
+
+    def __init__(self, parent_widget: QWidget = None):
+        super(QExampleLabel, self).__init__(parent_widget)
+
+        self.origin_point: QPoint = None
+
+        self.current_rubber_band: QRubberBand = None
+
+        self.init_ui()
+
+    def init_ui(self):
+        self.setPixmap(QPixmap('input.png'))
+
+    def mousePressEvent(self, mouse_event: QMouseEvent):
+        self.origin_point = mouse_event.pos()
+
+        self.current_rubber_band = QRubberBand(QRubberBand.Rectangle, self)
+
+        self.current_rubber_band.setGeometry(QRect(self.origin_point, QSize()))
+
+        self.current_rubber_band.show()
+
+    def mouseMoveEvent(self, mouse_event: QMouseEvent):
+        self.current_rubber_band.setGeometry(QRect(self.origin_point, mouse_event.pos()).normalized())
+
+    def mouseReleaseEvent(self, mouse_event: QMouseEvent):
+        self.current_rubber_band.hide()
+
+        current_rect: QRect = self.current_rubber_band.geometry()
+
+        self.current_rubber_band.deleteLater()
+
+        crop_pixmap: QPixmap = self.pixmap().copy(current_rect)
+
+        crop_pixmap.save('output.png')
+
+
+if __name__ == '__main__':
+    myQApplication = QApplication(sys.argv)
+
+    myQExampleLabel = QExampleLabel()
+
+    myQExampleLabel.show()
+
+    sys.exit(myQApplication.exec_())
+
