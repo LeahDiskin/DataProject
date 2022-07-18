@@ -1,10 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import Data.params as p
+import Utils.params as p
 from Data.datasets import split_data
-import json
-from pathlib import Path
 
 df=pd.read_csv(p.csv_path)
 

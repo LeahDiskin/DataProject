@@ -26,6 +26,7 @@ path_col_name_df = 'image path'
 label_col_name = 'labels'
 image_col_name = 'image_name'
 path_col_name = 'path'
+image_col_ind=1
 
 # cifar100
 cifar100_labels = b'coarse_labels'
@@ -41,7 +42,8 @@ cifar_images = b'data'
 
 #labels list
 labels=['airplane', 'automobile', 'bird', 'cat',
-                              'deer', 'dog', 'frog', 'horse', 'ship', 'truck',
-                              'household electrical devices', 'insects', 'large carnivores',
-                              'non-insect invertebrates', 'small mammals']
+'deer', 'dog', 'frog', 'horse', 'ship', 'truck',
+'household furniture','large carnivores',
+'large man-made outdoor things',
+'people','trees']
 
