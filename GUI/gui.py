@@ -1,78 +1,81 @@
-import os.path
-
 import numpy as np
 from PIL import Image
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt, QDir
-from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBoxLayout, QFileDialog, QPushButton, QLabel
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBoxLayout, QFileDialog, QPushButton, \
+    QLabel, QHBoxLayout, QGridLayout
+from PyQt5.QtGui import QPixmap, QPalette
 import sys
 from Utils import params as p
 from Data.image import image_datails_to_csv, load_image, image_to_cifar10_format, image_to_square
 from Model import model
 from pathlib import Path
 
-class PhotoLabel(QLabel):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setAlignment(Qt.AlignCenter)
-        self.setText('\n\n Drop Image Here \n\n')
-        self.setStyleSheet('''
-        QLabel {
-            border: 4px dashed #aaa;
-        }''')
-
-
-    def setPixmap(self, *args, **kwargs):
-        super().setPixmap(*args, **kwargs)
-        self.setStyleSheet('''
-        QLabel {
-            border: none;
-        }''')
-
 class MainWindow(QMainWindow,QWidget):
+
     def __init__(self):
+
+        # self.center_image_crop=(0,0)
         super().__init__()
-        labels=p.labels
-        self.select_label = QComboBox(self)
-        self.select_label.addItems(labels)
+        self.filename = ""
+
+        # create main and sub layout
         layout = QVBoxLayout()
-        layout.addWidget(self.select_label)
-        self.filename=""
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout()
+
+        #select label
+        self.select_label = QComboBox(self)
+        self.select_label.addItems(p.labels)
+        layout1.addWidget(self.select_label)
+
+        #browse
+        self.browse_btn = QPushButton('Browse')
+        self.browse_btn.clicked.connect(self.open_image)
+        layout1.addWidget(self.browse_btn)
+
+        #set the sub layout in the main one
+        layout.addLayout(layout1)
+
+        #lable predict
+        self.label_predict = QLabel("", self)
+        layout.addWidget(self.label_predict)
 
         #image
         self.photo = PhotoLabel()
-        browse_btn = QPushButton('Browse')
-        browse_btn.clicked.connect(self.open_image)
-        # grid = QGridLayout(self)
-        layout.addWidget(browse_btn)
         layout.addWidget(self.photo)
-        self.setAcceptDrops(True)
-        self.resize(300, 200)
 
-        # crop
-        # self.photo = PhotoLabel()
-        browse_btn = QPushButton('crop')
-        browse_btn.clicked.connect(self.open_image)
-        # grid = QGridLayout(self)
-        layout.addWidget(browse_btn)
-        layout.addWidget(self.photo)
-        self.setAcceptDrops(True)
-        self.resize(300, 200)
+        #crop
+        self.crop = QPushButton('crop')
+        self.crop.clicked.connect(self.crop_image)
+        layout.addWidget(self.crop)
 
         #save
-        save_btn = QPushButton('Save')
-        save_btn.clicked.connect(self.save_image)
-        layout.addWidget(save_btn)
+        self.save_btn = QPushButton('Save')
+        self.save_btn.clicked.connect(self.save_image)
+        layout2.addWidget(self.save_btn)
 
-        # get_prediction
-        prediction = QPushButton('Prediction')
-        prediction.clicked.connect(self.get_prediction)
-        layout.addWidget(prediction)
+        #prediction
+        self.prediction = QPushButton('Prediction')
+        self.prediction.clicked.connect(self.get_prediction)
+        layout2.addWidget(self.prediction)
+
+        #set the sub layout in the main one
+        layout.addLayout(layout2)
+
+        #declare container
         container = QWidget()
         container.setLayout(layout)
 
         self.setCentralWidget(container)
+        self.setAcceptDrops(True)
+        self.resize(300, 200)
+
+        ##try anther type of layout
+        # grid = QGridLayout(self)
+        # grid.addWidget(self.select_label, 0, 1)
+        # grid.addWidget(self.browse_btn, 0, 3)
+        # grid.addWidget(self.photo, 2, 0)
 
     def current_text_changed(self, s):
         print("Current text: ", s)
@@ -98,7 +101,7 @@ class MainWindow(QMainWindow,QWidget):
         else:
             event.ignore()
 
- # this function loads an image
+    # this function loads an image
     def open_image(self):
         if not self.filename:
             self.filename, _ = QFileDialog.getOpenFileName(self, 'Select Photo', QDir.currentPath(),
@@ -106,10 +109,6 @@ class MainWindow(QMainWindow,QWidget):
             if not self.filename:
                 return
         image_pixmap: QPixmap =self.photo.setPixmap(QPixmap(self.filename))
-
-            # self.pixmap().copy(filename)
-
-
 
     def save_image(self,event):
 
@@ -135,13 +134,56 @@ class MainWindow(QMainWindow,QWidget):
         # image to cifar10 format: cut and resize
         img:np.ndarray=image_to_cifar10_format(img)
 
-        print(model.predict(img))
+        #diaplay the prediction
+        self.label_predict.setText(model.predict(img))
+
+    def crop_image(self):
+        print("crop")
+        # crop_inage(self.center_image_crop)
+
+    def mousePressEvent(self, e):
+        print(e.pos())
+        self.center_image_crop = e.pos
+        qp = QtGui.QPainter()
+        qp.begin(self)
+        qp.setPen(QtCore.Qt.red)
+        qp.drawEllipse(e.pos().x(), e.pos().y(), 10, 10)
+        qp.end()
+        self.update()
+
+class PhotoLabel(QLabel):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setAlignment(Qt.AlignCenter)
+        self.setText('\n\n Drop Image Here \n\n')
+        self.setStyleSheet('''
+        QLabel {
+            border: 4px dashed #aaa;
+        }''')
 
 
-app = QApplication(sys.argv)
-w = MainWindow()
-w.show()
-app.exec_()
+    def setPixmap(self, *args, **kwargs):
+        super().setPixmap(*args, **kwargs)
+        self.setStyleSheet('''
+        QLabel {
+            border: none;
+        }''')
+
+def main():
+    app = QApplication(sys.argv)
+    w = MainWindow()
+    app.setStyle("Fusion")
+    qp = QPalette()
+    qp.setColor(QPalette.ButtonText, Qt.black)
+    qp.setColor(QPalette.Window, Qt.white)
+    qp.setColor(QPalette.Button, Qt.red)
+    app.setPalette(qp)
+    w.show()
+    app.exec_()
+
+if __name__=="__main__":
+    main()
 
 # load all images from source folder , convert to cifar10 format and save in dest folder
 # def images_to_cifar10_format(source_path, dest_path):
