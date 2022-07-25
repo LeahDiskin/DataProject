@@ -1,21 +1,38 @@
-import os.path
+import os
 
 import numpy as np
 from PIL import Image
-from PyQt5.QtCore import Qt, QDir
-from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBoxLayout, QFileDialog, QPushButton, QLabel
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import Qt, QDir, QPoint, QRect, QSize, QFile
+from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBoxLayout, QFileDialog, QPushButton, \
+    QLabel, QHBoxLayout, QGridLayout, QRubberBand
+from PyQt5.QtGui import QPixmap, QPalette, QMouseEvent
 import sys
+
+from Model import model
 from Utils import params as p
 from Data.image import image_datails_to_csv, load_image, image_to_cifar10_format, image_to_square
-from Model import model
+#from Model import model
 from pathlib import Path
 
+from PIL import Image, ImageQt
+from datetime import datetime
+
+import cv2
+from playsound import playsound
+
+playsound_path=Path(r"C://Users//user1//Downloads//camera-shutter-click-03.wav")
+
+
+
+# from PySide2.QtGui import QPixmap, QMouseEvent, QPalette
 class PhotoLabel(QLabel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setAlignment(Qt.AlignCenter)
+        # self.setFixedSize(500,500)
+
         self.setText('\n\n Drop Image Here \n\n')
         self.setStyleSheet('''
         QLabel {
@@ -25,54 +42,93 @@ class PhotoLabel(QLabel):
 
     def setPixmap(self, *args, **kwargs):
         super().setPixmap(*args, **kwargs)
+        self.setGeometry(QtCore.QRect(50, 150, 400, 400))
         self.setStyleSheet('''
         QLabel {
             border: none;
         }''')
 
 class MainWindow(QMainWindow,QWidget):
-    def __init__(self):
-        super().__init__()
-        labels=p.labels
-        self.select_label = QComboBox(self)
-        self.select_label.addItems(labels)
+
+    def __init__(self, parent_widget: QWidget = None):
+
+        super(MainWindow, self).__init__(parent_widget)
+
+        self.image=PhotoLabel()
+
+        self.origin_point: QPoint = None
+
+        self.current_rubber_band: QRubberBand = None
+
+
+
+        # self.center_image_crop=(0,0)
+
+        self.filename = ""
+        self.init_ui()
+
+        # create main and sub layout
         layout = QVBoxLayout()
-        layout.addWidget(self.select_label)
-        self.filename=""
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout()
+
+        #select label
+        self.select_label = QComboBox(self)
+        self.select_label.addItems(p.labels)
+        layout1.addWidget(self.select_label)
+
+        #browse
+        self.browse_btn = QPushButton('Browse')
+        self.browse_btn.clicked.connect(self.open_image)
+        layout1.addWidget(self.browse_btn)
+
+        #set the sub layout in the main one
+        layout.addLayout(layout1)
+
+        #lable predict
+        self.label_predict = QLabel("", self)
+        layout.addWidget(self.label_predict)
 
         #image
         self.photo = PhotoLabel()
-        browse_btn = QPushButton('Browse')
-        browse_btn.clicked.connect(self.open_image)
-        # grid = QGridLayout(self)
-        layout.addWidget(browse_btn)
+        self.photo.setGeometry(QtCore.QRect(50, 150, 400, 400))
         layout.addWidget(self.photo)
-        self.setAcceptDrops(True)
-        self.resize(300, 200)
-
-        # crop
-        # self.photo = PhotoLabel()
-        browse_btn = QPushButton('crop')
-        browse_btn.clicked.connect(self.open_image)
-        # grid = QGridLayout(self)
-        layout.addWidget(browse_btn)
-        layout.addWidget(self.photo)
-        self.setAcceptDrops(True)
-        self.resize(300, 200)
 
         #save
-        save_btn = QPushButton('Save')
-        save_btn.clicked.connect(self.save_image)
-        layout.addWidget(save_btn)
+        self.save_btn = QPushButton('Save')
+        self.save_btn.clicked.connect(self.save_image)
+        layout2.addWidget(self.save_btn)
 
-        # get_prediction
-        prediction = QPushButton('Prediction')
-        prediction.clicked.connect(self.get_prediction)
-        layout.addWidget(prediction)
+        #prediction
+        self.prediction = QPushButton('Prediction')
+        self.prediction.clicked.connect(self.get_prediction)
+        layout2.addWidget(self.prediction)
+
+        # open camera
+        camera_btn = QPushButton('open camera')
+        camera_btn.clicked.connect(self.open_camera)
+        layout.addWidget(camera_btn)
+
+        #set the sub layout in the main one
+        layout.addLayout(layout2)
+
+        #declare container
         container = QWidget()
         container.setLayout(layout)
 
         self.setCentralWidget(container)
+        self.setAcceptDrops(True)
+        self.resize(300, 200)
+
+        ##try anther type of layout
+        # grid = QGridLayout(self)
+        # grid.addWidget(self.select_label, 0, 1)
+        # grid.addWidget(self.browse_btn, 0, 3)
+        # grid.addWidget(self.photo, 2, 0)
+
+    def init_ui(self):
+        # self.image.setPixmap(QPixmap('input.png'))
+        self.image.setPixmap(QPixmap(self.filename))
 
     def current_text_changed(self, s):
         print("Current text: ", s)
@@ -98,16 +154,15 @@ class MainWindow(QMainWindow,QWidget):
         else:
             event.ignore()
 
- # this function loads an image
+    # this function loads an image
     def open_image(self):
-        if not self.filename:
-            self.filename, _ = QFileDialog.getOpenFileName(self, 'Select Photo', QDir.currentPath(),
+        # if not self.filename:
+        self.filename, _ = QFileDialog.getOpenFileName(self, 'Select Photo', QDir.currentPath(),
                                                       'Images (*.png *.jpg)')
-            if not self.filename:
-                return
+            # if not self.filename:
+            #     return
         image_pixmap: QPixmap =self.photo.setPixmap(QPixmap(self.filename))
 
-            # self.pixmap().copy(filename)
 
 
 
@@ -135,226 +190,107 @@ class MainWindow(QMainWindow,QWidget):
         # image to cifar10 format: cut and resize
         img:np.ndarray=image_to_cifar10_format(img)
 
-        print(model.predict(img))
+        #diaplay the prediction
+        self.label_predict.setText(model.predict(img))
 
 
-app = QApplication(sys.argv)
-w = MainWindow()
-w.show()
-app.exec_()
+    def mousePressEvent(self, mouse_event: QMouseEvent):
+        self.origin_point = mouse_event.pos()
 
-# load all images from source folder , convert to cifar10 format and save in dest folder
-# def images_to_cifar10_format(source_path, dest_path):
-#     for dirname, dirnames, filenames in os.walk(source_path):
-#         for filename in filenames:
-#             if filename.endswith('.JPG') or filename.endswith('.jpg') or filename.endswith('.pmg'):
-#                 img = Image.open(os.path.join(dirname, filename))
-#                 img = image_to_cifar10_format(img)
-#                 img.save(dest_path + "/" + filename)
+        self.current_rubber_band = QRubberBand(QRubberBand.Rectangle, self)
 
-# import sys
-#
-# from PySide2.QtCore import QRect, QSize, QPoint
-#
-# from PySide2.QtWidgets import QLabel, QRubberBand, QApplication, QWidget
-#
-# from PySide2.QtGui import QPixmap, QMouseEvent
-#
-#
-# class QExampleLabel(QLabel):
-#
-#     def __init__(self, parent_widget: QWidget = None):
-#         super(QExampleLabel, self).__init__(parent_widget)
-#
-#         self.origin_point: QPoint = None
-#
-#         self.current_rubber_band: QRubberBand = None
-#
-#         self.init_ui()
-#
-#     def init_ui(self):
-#         self.setPixmap(QPixmap(r"C:\Users\r0583\Documents\Bootcamp\project\new_images\depositphotos_3054837-stock-photo-truck-with-freight.jpg"))
-#
-#     def mousePressEvent(self, mouse_event: QMouseEvent):
-#         self.origin_point = mouse_event.pos()
-#
-#         self.current_rubber_band = QRubberBand(QRubberBand.Rectangle, self)
-#
-#         self.current_rubber_band.setGeometry(QRect(self.origin_point, QSize()))
-#
-#         self.current_rubber_band.show()
-#
-#     def mouseMoveEvent(self, mouse_event: QMouseEvent):
-#         self.current_rubber_band.setGeometry(QRect(self.origin_point, mouse_event.pos()).normalized())
-#
-#     def mouseReleaseEvent(self, mouse_event: QMouseEvent):
-#         self.current_rubber_band.hide()
-#
-#         current_rect: QRect = self.current_rubber_band.geometry()
-#
-#         self.current_rubber_band.deleteLater()
-#
-#         crop_pixmap: QPixmap = self.pixmap().copy(current_rect)
-#
-#
-#         crop_pixmap.save(r"C:\Users\r0583\Documents\Bootcamp\project\crop.png")
-#
-#
-# if __name__ == '__main__':
-#     myQApplication = QApplication(sys.argv)
-#
-#     myQExampleLabel = QExampleLabel()
-#
-#     myQExampleLabel.show()
-#
-#     sys.exit(myQApplication.exec_())
+        self.current_rubber_band.setGeometry(QRect(self.origin_point, QSize()))
 
-# import sys
-#
-# from PySide2.QtWidgets import (QApplication, QComboBox, QDialog,
-#
-#                                QDialogButtonBox, QGridLayout, QGroupBox,
-#
-#                                QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-#
-#                                QMenu, QMenuBar, QPushButton, QSpinBox,
-#
-#                                QTextEdit, QVBoxLayout)
-#
-#
-# class Dialog(QDialog):
-#     num_grid_rows = 3
-#
-#     num_buttons = 4
-#
-#     def __init__(self):
-#
-#         super().__init__()
-#
-#         self._small_editor = None
-#
-#         self._file_menu = None
-#
-#         self._menu_bar = None
-#
-#         self._horizontal_group_box = None
-#
-#         self._grid_group_box = None
-#
-#         self._exit_action = None
-#
-#         self._form_group_box = None
-#
-#         self.create_menu()
-#
-#         self.create_horizontal_group_box()
-#
-#         self.create_grid_group_box()
-#
-#         self.create_form_group_box()
-#
-#         big_editor = QTextEdit()
-#
-#         big_editor.setPlainText("This widget takes up all the remaining space "
-#
-#                                 "in the top-level layout.")
-#
-#         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-#
-#         button_box.accepted.connect(self.accept)
-#
-#         button_box.rejected.connect(self.reject)
-#
-#         main_layout = QVBoxLayout()
-#
-#         main_layout.setMenuBar(self._menu_bar)
-#
-#         main_layout.addWidget(self._horizontal_group_box)
-#
-#         main_layout.addWidget(self._grid_group_box)
-#
-#         main_layout.addWidget(self._form_group_box)
-#
-#         main_layout.addWidget(big_editor)
-#
-#         main_layout.addWidget(button_box)
-#
-#         self.setLayout(main_layout)
-#
-#         self.setWindowTitle("Basic Layouts")
-#
-#     def create_menu(self):
-#
-#         self._menu_bar = QMenuBar()
-#
-#         self._file_menu = QMenu("&File", self)
-#
-#         self._exit_action = self._file_menu.addAction("E&xit")
-#
-#         self._menu_bar.addMenu(self._file_menu)
-#
-#         self._exit_action.triggered.connect(self.accept)
-#
-#     def create_horizontal_group_box(self):
-#
-#         self._horizontal_group_box = QGroupBox("Horizontal layout")
-#
-#         layout = QHBoxLayout()
-#
-#         for i in range(Dialog.num_buttons):
-#             button = QPushButton(f"Button {i + 1}")
-#
-#             layout.addWidget(button)
-#
-#         self._horizontal_group_box.setLayout(layout)
-#
-#     def create_grid_group_box(self):
-#
-#         self._grid_group_box = QGroupBox("Grid layout")
-#
-#         layout = QGridLayout()
-#
-#         for i in range(Dialog.num_grid_rows):
-#             label = QLabel(f"Line {i + 1}:")
-#
-#             line_edit = QLineEdit()
-#
-#             layout.addWidget(label, i + 1, 0)
-#
-#             layout.addWidget(line_edit, i + 1, 1)
-#
-#         self._small_editor = QTextEdit()
-#
-#         self._small_editor.setPlainText("This widget takes up about two thirds "
-#
-#                                         "of the grid layout.")
-#
-#         layout.addWidget(self._small_editor, 0, 2, 4, 1)
-#
-#         layout.setColumnStretch(1, 10)
-#
-#         layout.setColumnStretch(2, 20)
-#
-#         self._grid_group_box.setLayout(layout)
-#
-#     def create_form_group_box(self):
-#
-#         self._form_group_box = QGroupBox("Form layout")
-#
-#         layout = QFormLayout()
-#
-#         layout.addRow(QLabel("Line 1:"), QLineEdit())
-#
-#         layout.addRow(QLabel("Line 2, long text:"), QComboBox())
-#
-#         layout.addRow(QLabel("Line 3:"), QSpinBox())
-#
-#         self._form_group_box.setLayout(layout)
-#
-#
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#
-#     dialog = Dialog()
-#
-#     sys.exit(dialog.exec())
+        self.current_rubber_band.show()
+
+    def mouseMoveEvent(self, mouse_event: QMouseEvent):
+        self.current_rubber_band.setGeometry(QRect(self.origin_point, mouse_event.pos()).normalized())
+
+    def mouseReleaseEvent(self, mouse_event: QMouseEvent):
+        self.current_rubber_band.hide()
+
+        current_rect: QRect = self.current_rubber_band.geometry()
+
+        self.current_rubber_band.deleteLater()
+        # crop_image=PhotoLabel()
+
+        crop_pixmap: QPixmap = self.photo.pixmap().copy(current_rect)
+        # self.filename, _ = QFileDialog.getOpenFileName(self, 'Select Photo', QDir.currentPath(),
+        #       'Images (*.png *.jpg)')
+        path_crop=r'C:\Users\user1\Documents\bootcamp\Project\new_images'
+        str = datetime.now().strftime("%d-%m-%Y %H;%M;%S")
+        self.filename = os.path.join(path_crop, f"crop_{str}.png")
+        # crop_pixmap.save(r"C://Users//IMOE001//Desktop//studied//aplied_material//project//new images//img.png","PNG")
+        crop_pixmap.save(self.filename)
+        self.photo.setPixmap(QPixmap(self.filename))
+
+
+    # def QPixmapToArray(self,pixmap):
+    #     ## Get the size of the current pixmap
+    #     size = pixmap.size()
+    #     h = size.width()
+    #     w = size.height()
+    #
+    #     ## Get the QImage Item and convert it to a byte string
+    #     qimg = pixmap.toImage()
+    #     byte_str = qimg.bits().tobytes()
+    #
+    #     ## Using the np.frombuffer function to convert the byte string into an np array
+    #     img = np.frombuffer(byte_str, dtype=np.uint8).reshape((w, h, 4))
+    #
+    #     return img
+
+    def new_window_camera(self):
+        cv2.namedWindow("camera")
+        vc = cv2.VideoCapture(0)
+
+        if vc.isOpened():  # try to get the first frame
+            rval, frame = vc.read()
+        else:
+            rval = False
+        while rval:
+            cv2.imshow("camera", frame)
+            rval, frame = vc.read()
+
+            key = cv2.waitKey(20)
+            if key == 27:  # exit on ESC
+                playsound(playsound_path)
+                return_value, image = vc.read()
+                break
+
+        vc.release()
+        cv2.destroyWindow("camera")
+        return image
+
+    def open_camera(self):
+        save = r"C:/Users/user1/Documents/bootcamp/Project/bonus/from_webcamera/"
+
+        image=self.new_window_camera()
+
+        img = Image.fromarray(image)
+        str=datetime.now().strftime("%d-%m-%Y %H;%M;%S")
+        self.filename=os.path.join(save, f"camera_{str}.png")
+        img.save(self.filename)
+        self.photo.setPixmap(QPixmap(self.filename))
+
+
+
+
+
+
+
+
+def main():
+    app = QApplication(sys.argv)
+    w = MainWindow()
+    app.setStyle("Fusion")
+    qp = QPalette()
+    qp.setColor(QPalette.ButtonText, Qt.black)
+    qp.setColor(QPalette.Window, Qt.white)
+    qp.setColor(QPalette.Button, Qt.red)
+    app.setPalette(qp)
+    w.show()
+    app.exec_()
+
+if __name__=="__main__":
+    main()

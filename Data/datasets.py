@@ -4,7 +4,8 @@ import numpy as np
 from PIL import Image
 import os
 from typing import Dict
-from image import load_image
+from Data.image import load_image
+
 from Utils import params as p
 
 cifar100_images, cifar10_images = [], []
@@ -24,7 +25,7 @@ def create_df()->pd.DataFrame:
 def data_to_df(data:dict,labels_name,images_name,dataset,image_folder_path)->pd.DataFrame:
     df= pd.DataFrame({p.labels_col_name_df:data[labels_name] , p.images_col_name_df: data[images_name], p.dataset_col_name_df: dataset,p.path_col_name_df:image_folder_path })
     for i in df.index:
-        df[p.path_col_name_df][i]=fr"{image_folder_path}\{data[images_name][i]}"
+        df[p.path_col_name_df][i]=fr"{image_folder_path}/{data[images_name][i]}"
     return df
 
 # this function inserts images into a list
@@ -50,7 +51,7 @@ def data_to_csv(data:pd.DataFrame,path):
 def images_to_folder(images:list, images_names:list):
     for i in range(0, len(images)):
         img = Image.fromarray(images[i])
-        img.save(f"{p.image_folder_path}/{images_names[i]}", format="png")
+        img.save(f"{p.image_folder_path}\{images_names[i]}", format="png")
 
 # this function changes the labels indexes that will fit cifar10
 def change_labels(labels:list)->list:
@@ -169,16 +170,16 @@ def main():
     train, validation, test=split_data(p.csv_path)
 
     # create matrix for each part (train, validation and test)
-    x_train:np.ndarray=data_to_matrix(train)
-    y_train=extract_column(train,p.labels_col_name_df)
-    x_validation:np.ndarray=data_to_matrix(validation)
-    y_validation=extract_column(validation,p.labels_col_name_df)
-    x_test:np.ndarray=data_to_matrix(test)
-    y_test=extract_column(test,p.labels_col_name_df)
+    # x_train:np.ndarray=data_to_matrix(train)
+    # y_train=extract_column(train,p.labels_col_name_df)
+    # x_validation:np.ndarray=data_to_matrix(validation)
+    # y_validation=extract_column(validation,p.labels_col_name_df)
+    # x_test:np.ndarray=data_to_matrix(test)
+    # y_test=extract_column(test,p.labels_col_name_df)
 
     # save train, test and validation in npz file
-    np.savez(p.binary_file_path, x_train=x_train, y_train=y_train, x_validation=x_validation, y_validation=y_validation, x_test=x_test,
-             y_test=y_test)
+    # np.savez(p.binary_file_path, x_train=x_train, y_train=y_train, x_validation=x_validation, y_validation=y_validation, x_test=x_test,
+    #          y_test=y_test)
 
 
 

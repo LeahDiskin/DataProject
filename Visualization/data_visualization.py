@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import Utils.params as p
 from Data.datasets import split_data
-
 df=pd.read_csv(p.csv_path)
 
 #display num of sempals for each class using bar
