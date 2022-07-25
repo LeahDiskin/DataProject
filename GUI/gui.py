@@ -244,6 +244,8 @@ class MainWindow(QMainWindow,QWidget):
         cv2.namedWindow("camera")
         vc = cv2.VideoCapture(0)
 
+        print()
+
         if vc.isOpened():  # try to get the first frame
             rval, frame = vc.read()
         else:
