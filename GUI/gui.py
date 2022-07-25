@@ -1,22 +1,35 @@
+import io
+
 import numpy as np
 from PIL import Image
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import Qt, QDir
+from PyQt5.QtCore import Qt, QDir, QPoint, QRect, QSize, QFile, QBuffer
 from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBoxLayout, QFileDialog, QPushButton, \
-    QLabel, QHBoxLayout, QGridLayout
-from PyQt5.QtGui import QPixmap, QPalette
+    QLabel, QHBoxLayout, QGridLayout, QRubberBand
+from PyQt5.QtGui import QPixmap, QPalette, QMouseEvent
 import sys
+
 from Utils import params as p
 from Data.image import image_datails_to_csv, load_image, image_to_cifar10_format, image_to_square
-from Model import model
+#from Model import model
 from pathlib import Path
 
 class MainWindow(QMainWindow,QWidget):
 
-    def __init__(self):
+    def __init__(self, parent_widget: QWidget = None):
+
+        super(MainWindow, self).__init__(parent_widget)
+
+        self.image=PhotoLabel()
+
+        self.origin_point: QPoint = None
+
+        self.current_rubber_band: QRubberBand = None
+
+        self.init_ui()
 
         # self.center_image_crop=(0,0)
-        super().__init__()
+
         self.filename = ""
 
         # create main and sub layout
@@ -141,15 +154,76 @@ class MainWindow(QMainWindow,QWidget):
         print("crop")
         # crop_inage(self.center_image_crop)
 
-    def mousePressEvent(self, e):
-        print(e.pos())
-        self.center_image_crop = e.pos
-        qp = QtGui.QPainter()
-        qp.begin(self)
-        qp.setPen(QtCore.Qt.red)
-        qp.drawEllipse(e.pos().x(), e.pos().y(), 10, 10)
-        qp.end()
-        self.update()
+    # def mousePressEvent(self, e):
+    #     print(e.pos())
+    #     self.center_image_crop = e.pos
+    #     qp = QtGui.QPainter()
+    #     qp.begin(self)
+    #     qp.setPen(QtCore.Qt.red)
+    #     qp.drawEllipse(e.pos().x(), e.pos().y(), 10, 10)
+    #     qp.end()
+    #     self.update()
+
+    def init_ui(self):
+        self.image.setPixmap(QPixmap('input.png'))
+        # self.setPixmap(QPixmap(self.filename))
+
+    def mousePressEvent(self, mouse_event: QMouseEvent):
+        self.origin_point = mouse_event.pos()
+
+        self.current_rubber_band = QRubberBand(QRubberBand.Rectangle, self)
+
+        self.current_rubber_band.setGeometry(QRect(self.origin_point, QSize()))
+
+        self.current_rubber_band.show()
+
+    def mouseMoveEvent(self, mouse_event: QMouseEvent):
+        self.current_rubber_band.setGeometry(QRect(self.origin_point, mouse_event.pos()).normalized())
+
+    def mouseReleaseEvent(self, mouse_event: QMouseEvent):
+        self.current_rubber_band.hide()
+
+        current_rect: QRect = self.current_rubber_band.geometry()
+
+        self.current_rubber_band.deleteLater()
+        # crop_image=PhotoLabel()
+
+        crop_pixmap: QPixmap = self.image.pixmap().copy(current_rect)
+        # self.filename, _ = QFileDialog.getOpenFileName(self, 'Select Photo', QDir.currentPath(),
+        #       'Images (*.png *.jpg)')
+
+        # buffer = QBuffer()
+        # buffer.open(QBuffer.ReadWrite)
+        # crop_pixmap.toImage().save(buffer, "PNG")
+        # pil_im = Image.open(io.BytesIO(buffer.data()))
+        # pil_im.show()
+
+        byte_array = QtCore.QByteArray()
+        buffer = QtCore.QBuffer(byte_array)
+        buffer.open(QtCore.QIODevice.WriteOnly)
+        crop_pixmap.toImage().save(buffer, 'jpg', 75)
+        crop_pixmap.save(r"C://Users//IMOE001//Desktop//studied//aplied_material//project//new images//img.png","PNG")
+        #img= self.QPixmapToArray(crop_pixmap)
+        print("after1")
+        print("after2")
+
+    def QPixmapToArray(self,pixmap):
+        ## Get the size of the current pixmap
+        size = pixmap.size()
+        h = size.width()
+        w = size.height()
+
+        ## Get the QImage Item and convert it to a byte string
+        qimg = pixmap.toImage()
+        byte_str = qimg.bits().tobytes()
+
+        ## Using the np.frombuffer function to convert the byte string into an np array
+        img = np.frombuffer(byte_str, dtype=np.uint8).reshape((w, h, 4))
+
+        return img
+
+
+
 
 class PhotoLabel(QLabel):
 

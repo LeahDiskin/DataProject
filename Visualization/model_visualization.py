@@ -1,3 +1,28 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
+
+import Utils.params as p
+def present_wrong_predicted_labels(pred_labels:np.ndarray,true_labels:np.ndarray,images:np.ndarray):
+    counter=0
+    ind=0
+    fig = plt.figure(figsize=(12, 12))
+    rows = 4
+    columns = 3
+    while counter<12:
+        true_label=true_labels[ind].argmax()
+        pred_label=pred_labels[ind].argmax()
+        if true_label!=pred_label:
+            true_label_name=p.labels[true_label]
+            pred_label_name=p.labels[pred_label]
+        img = Image.fromarray(images[ind])
+        fig.add_subplot(rows, columns, counter+1)
+        plt.imshow(img)
+        plt.axis('off')
+        plt.title(f"\ntrue: {true_label_name}, predicted: {pred_label_name}")
+        counter+=1
+        ind+=1
+    plt.show()
 from PIL import Image
 from tensorflow.python.keras.utils.np_utils import to_categorical
 from sklearn.metrics import confusion_matrix, classification_report

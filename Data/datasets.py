@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 import os
 from typing import Dict
-from image import load_image
+from Data.image import load_image
 from Utils import params as p
 
 cifar100_images, cifar10_images = [], []
