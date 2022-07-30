@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from PIL.ImageChops import offset
+
 import Utils.params as p
 from Data import datasets as d
 
@@ -9,15 +11,16 @@ df=pd.read_csv(p.csv_path)
 #display num of sempals for each class using bar
 def bar_samples_per_class(df):
 
-    classes=df[p.labels_col_name_df].unique()
+    labels=df[p.labels_col_name_df].unique()
     sempals_per_class=[]
-    for i in classes:
+    for i in labels:
         sempals_per_class.append(df[df[p.labels_col_name_df]==i].count()[0])
-    x = np.array(classes)
+    x = np.array(labels)
     y = np.array(sempals_per_class)
     plt.xticks(x)
     plt.tick_params(axis='x', colors='red', direction='out', length=13, width=3)
     plt.bar(x,y)
+
     plt.show()
 
 #display the split to train/test/validation using multy bar
@@ -43,7 +46,7 @@ def display_split_train_test_validation(df):
            align='edge')
 
     ax.set_xlabel('train/validation/test')
-
+    plt.legend(["train", "test", "validation"])
     plt.show()
 
 #display some images for each class
@@ -56,8 +59,10 @@ def display_data_example(df):
     columns = 8
     pos = 1
     for i in labels:
-        ax = fig.add_subplot(rows, columns, pos)
-        ax.set_title(p.labels[int(i)],loc="left",size="small")
+        # ax = fig.add_subplot(rows, columns, pos)
+        # title=ax.set_title(p.labels[int(i)],loc="left",size="small")
+
+
         plt.axis('off')
         for j in df[df[p.labels_col_name_df]==i].head(columns)[p.path_col_name]:
 

@@ -7,7 +7,7 @@ print(f"Numpy: {np.version.version}")
 
 
 
-model=keras.models.load_model('C://Users//user1//Documents//bootcamp//Project//keras_cifar10_trained_model.h5')
+model=keras.models.load_model(r"C:\Users\IMOE001\Downloads\model")
 
 def predict(img:np.ndarray)->string:
     img = img.astype('float32')

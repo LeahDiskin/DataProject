@@ -1,5 +1,4 @@
 import os
-
 import numpy as np
 from PIL import Image
 from PyQt5 import QtCore, QtGui
@@ -9,19 +8,19 @@ from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBox
 from PyQt5.QtGui import QPixmap, QPalette, QMouseEvent
 import sys
 
-from Model import model
+
 from Utils import params as p
 from Data.image import image_datails_to_csv, load_image, image_to_cifar10_format, image_to_square
-#from Model import model
+from Model import model
 from pathlib import Path
 
 from PIL import Image, ImageQt
 from datetime import datetime
 
 import cv2
-from playsound import playsound
+#from playsound import playsound
 
-playsound_path=Path(r"C://Users//user1//Downloads//camera-shutter-click-03.wav")
+playsound_path=Path(r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\camera-shutter-click-03.wav")
 
 
 
@@ -217,7 +216,7 @@ class MainWindow(QMainWindow,QWidget):
         crop_pixmap: QPixmap = self.photo.pixmap().copy(current_rect)
         # self.filename, _ = QFileDialog.getOpenFileName(self, 'Select Photo', QDir.currentPath(),
         #       'Images (*.png *.jpg)')
-        path_crop=r'C:\Users\user1\Documents\bootcamp\Project\new_images'
+        path_crop=r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\crop"
         str = datetime.now().strftime("%d-%m-%Y %H;%M;%S")
         self.filename = os.path.join(path_crop, f"crop_{str}.png")
         # crop_pixmap.save(r"C://Users//IMOE001//Desktop//studied//aplied_material//project//new images//img.png","PNG")
@@ -254,7 +253,7 @@ class MainWindow(QMainWindow,QWidget):
 
             key = cv2.waitKey(20)
             if key == 27:  # exit on ESC
-                playsound(playsound_path)
+                # playsound(playsound_path)
                 return_value, image = vc.read()
                 break
 
@@ -263,7 +262,7 @@ class MainWindow(QMainWindow,QWidget):
         return image
 
     def open_camera(self):
-        save = r"C:/Users/user1/Documents/bootcamp/Project/bonus/from_webcamera/"
+        save =r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\new images"
 
         image=self.new_window_camera()
 
