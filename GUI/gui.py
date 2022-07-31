@@ -2,7 +2,6 @@ import os
 import sys
 import cv2
 import numpy as np
-
 from ctypes.wintypes import RGB
 from PIL import Image, ImageOps
 from PyQt5 import QtCore, QtGui
@@ -21,23 +20,21 @@ from PyQt5.QtWidgets import QMessageBox
 playsound_path=r"C://Users//user1//Downloads//camera-shutter-click-03.WAV"
 
 
-
-# from PySide2.QtGui import QPixmap, QMouseEvent, QPalette
 class PhotoLabel(QLabel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setAlignment(Qt.AlignCenter)
         self.setFixedSize(400,400)
-
         self.setText('\n\n Drop Image Here \n\n')
         self.setStyleSheet('''
         QLabel {
             border: 4px dashed #aaa;
         }''')
-
+        #path for saving images
         self.filename = ""
 
+        #declare sub laout
         self.layout = QVBoxLayout()
 
         # lable predict
@@ -54,7 +51,9 @@ class PhotoLabel(QLabel):
         }''')
 
     def showImage(self, image_path: str):
+        #reaset the predict label
         self.label_predict.setText("")
+        #image to squre
         image = Image.open(image_path)
         h = image.height
         w = image.width
@@ -65,12 +64,10 @@ class PhotoLabel(QLabel):
             border = ((h - w) // 2, 0, (h - w) // 2, 0)
             image = ImageOps.expand(image, border=border, fill=RGB(252, 252, 252))
         image = image.resize((400, 400))
-        # image.save(f"output{self.my_class}.png")
         image.save("output.png")
-
+        #display the image on the gui
         image_pixmap: QPixmap = self.setPixmap(QPixmap("output.png"))
-        # pixmap = QtGui.QPixmap(f"output{self.my_class}.png")
-        # self.imageLabel.setPixmap(pixmap)
+
 
     def mousePressEvent(self, mouse_event: QMouseEvent):
         self.origin_point = mouse_event.pos()
@@ -90,18 +87,19 @@ class PhotoLabel(QLabel):
         current_rect: QRect = self.current_rubber_band.geometry()
 
         self.current_rubber_band.deleteLater()
-        # crop_image=PhotoLabel()
 
         crop_pixmap: QPixmap = self.pixmap().copy(current_rect)
-        # self.filename, _ = QFileDialog.getOpenFileName(self, 'Select Photo', QDir.currentPath(),
-        #       'Images (*.png *.jpg)')
 
-        path_crop=r'C:\Users\user1\Documents\bootcamp\Project\new_images'
+        path_crop=r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\crop"
+
+        #give the image uniqe path
         str = datetime.now().strftime("%d-%m-%Y %H;%M;%S")
         self.filename = os.path.join(path_crop, f"crop_{str}.png")
-        # crop_pixmap.save(r"C://Users//IMOE001//Desktop//studied//aplied_material//project//new images//img.png","PNG")
+
+        #save the crop image
         crop_pixmap.save(self.filename)
-        # self.setPixmap(QPixmap(self.filename))
+
+        #display the crop image
         self.showImage(self.filename)
 
 
@@ -118,13 +116,10 @@ class MainWindow(QMainWindow,QWidget):
 
         self.current_rubber_band: QRubberBand = None
 
-        # self.filename = ""
-
-        # create main and sub layout
+        # create main and sub layouts
         layout = QVBoxLayout()
         layout1 = QHBoxLayout(self)
         layout2 = QHBoxLayout()
-
 
         #select label
         self.select_label = QComboBox(self)
@@ -138,7 +133,6 @@ class MainWindow(QMainWindow,QWidget):
 
         #set the sub layout in the main one
         layout.addLayout(layout1)
-
 
         #image
         self.photo = PhotoLabel()
@@ -156,14 +150,15 @@ class MainWindow(QMainWindow,QWidget):
         self.prediction.clicked.connect(self.get_prediction)
         layout2.addWidget(self.prediction)
 
-
-        # open camera
+       # open camera
         camera_btn = QPushButton('open camera')
         camera_btn.clicked.connect(self.open_camera)
         layout.addWidget(camera_btn)
 
         #set the sub layout in the main one
         layout.addLayout(layout2)
+
+        self.msgBox = QMessageBox()
 
         #declare container
         container = QWidget()
@@ -176,8 +171,8 @@ class MainWindow(QMainWindow,QWidget):
         self.init_ui()
 
 
+
     def init_ui(self):
-        # self.image.setPixmap(QPixmap('input.png'))
         self.image.setPixmap(QPixmap(self.photo.filename))
 
     def current_text_changed(self, s):
@@ -185,13 +180,12 @@ class MainWindow(QMainWindow,QWidget):
 
     # this function loads an image
     def open_image(self):
-        # if not self.filename:
         self.photo.filename, _ = QFileDialog.getOpenFileName(self, 'Select Photo', QDir.currentPath(),
                                                       'Images (*.png *.jpg)')
         if not self.photo.filename:
                 return
         self.photo.showImage(self.photo.filename)
-        # image_pixmap: QPixmap =self.photo.setPixmap(QPixmap(self.filename))
+
 
     def save_image(self,event):
 
@@ -208,6 +202,7 @@ class MainWindow(QMainWindow,QWidget):
         image_path=fr"{p.new_images_folder_path}\{image_name}"
         csv_path=p.new_images_csv_path
         image_datails_to_csv(label,image_name,image_path,csv_path)
+        self.msgBox.about(self,"saved successfully")
 
     def get_prediction(self):
         # load an image
@@ -219,9 +214,10 @@ class MainWindow(QMainWindow,QWidget):
 
         #diaplay the prediction
         # self.photo.label_predict.setText(model.predict(img))
-        self.msgBox=QMessageBox()
+
         pred=model.predict(img)
-        res=pred[0]+'     '+str(pred[1])+'%'
+        res=pred[0]+'     '+str(pred[1])+'%'+'\n'+pred[2]
+
         self.msgBox.about(self,"prediction",res)
 
     def new_window_camera(self):
@@ -238,41 +234,46 @@ class MainWindow(QMainWindow,QWidget):
 
             key = cv2.waitKey(20)
             if key == 27:  # exit on ESC
-                playsound(playsound_path)
-                # time.sleep(100)
-
+                # playsound(playsound_path)
                 return_value, image = vc.read()
-
                 break
 
-        # vc.release()
         cv2.destroyWindow("camera")
         return image
 
     def open_camera(self):
-        save = r"C:/Users/user1/Documents/bootcamp/Project/bonus/from_webcamera/"
+        save = r"C:\Users\IMOE001\Desktop\studied\aplied_material\project\new images"
 
         image=self.new_window_camera()
-
         img = Image.fromarray(image)
+
+        #give image uniqe path
         str=datetime.now().strftime("%d-%m-%Y %H;%M;%S")
         self.photo.filename=os.path.join(save, f"camera_{str}.png")
+
+        #save image
         img.save(self.photo.filename)
+        # display image
         self.photo.showImage(self.photo.filename)
-        # self.photo.setPixmap(QPixmap(self.filename))
 
 
-def main():
-    app = QApplication(sys.argv)
-    w = MainWindow()
+def setColor(app):
     app.setStyle("Fusion")
     qp = QPalette()
     qp.setColor(QPalette.ButtonText, Qt.black)
     qp.setColor(QPalette.Window, Qt.white)
     qp.setColor(QPalette.Button, Qt.gray)
     app.setPalette(qp)
+    return app
+
+
+def main():
+    app = QApplication(sys.argv)
+    w = MainWindow()
+    app=setColor(app)
     w.show()
     app.exec_()
+
 
 if __name__=="__main__":
     main()
