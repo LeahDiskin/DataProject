@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from ctypes.wintypes import RGB
 from PIL import Image, ImageOps
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QDir, QPoint, QRect, QSize, QFile
 from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBoxLayout, QFileDialog, QPushButton, QLabel, QHBoxLayout, QGridLayout, QRubberBand
 from PyQt5.QtGui import QPixmap, QPalette, QMouseEvent
@@ -16,6 +16,7 @@ from PIL import Image, ImageQt
 from datetime import datetime
 from playsound import playsound
 from PyQt5.QtWidgets import QMessageBox
+from functools import partial
 
 playsound_path=r"C://Users//user1//Downloads//camera-shutter-click-03.WAV"
 
@@ -147,7 +148,7 @@ class MainWindow(QMainWindow,QWidget):
 
         #prediction
         self.prediction = QPushButton('Prediction')
-        self.prediction.clicked.connect(self.get_prediction)
+        self.prediction.clicked.connect(partial(self.get_prediction,0))
         layout2.addWidget(self.prediction)
 
        # open camera
@@ -202,9 +203,9 @@ class MainWindow(QMainWindow,QWidget):
         image_path=fr"{p.new_images_folder_path}\{image_name}"
         csv_path=p.new_images_csv_path
         image_datails_to_csv(label,image_name,image_path,csv_path)
-        self.msgBox.about(self,"saved successfully")
+        self.msgBox.about(self,"save","saved successfully")
 
-    def get_prediction(self):
+    def get_prediction(self,i):
         # load an image
         img: np.ndarray = load_image(self.photo.filename)
         img: Image = Image.fromarray(img)
@@ -215,10 +216,14 @@ class MainWindow(QMainWindow,QWidget):
         #diaplay the prediction
         # self.photo.label_predict.setText(model.predict(img))
 
-        pred=model.predict(img)
-        res=pred[0]+'     '+str(pred[1])+'%'+'\n'+pred[2]
-
-        self.msgBox.about(self,"prediction",res)
+        pred=model.predict(img,i)
+        res=pred[0]+'     '+str(pred[1])+'\n'+pred[2]
+        self.trayAgain = QPushButton('try again')
+        self.msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        self.msgBox.about(self, "prediction", res) == QMessageBox.Yes
+        self.msgBox.setText("succes??")
+        if self.msgBox.exec_()==QMessageBox.No:
+            self.get_prediction(i+1)
 
     def new_window_camera(self):
         cv2.namedWindow("camera")
@@ -234,7 +239,7 @@ class MainWindow(QMainWindow,QWidget):
 
             key = cv2.waitKey(20)
             if key == 27:  # exit on ESC
-                # playsound(playsound_path)
+                playsound(playsound_path)
                 return_value, image = vc.read()
                 break
 
@@ -262,7 +267,7 @@ def setColor(app):
     qp = QPalette()
     qp.setColor(QPalette.ButtonText, Qt.black)
     qp.setColor(QPalette.Window, Qt.white)
-    qp.setColor(QPalette.Button, Qt.gray)
+    qp.setColor(QPalette.Button, Qt.blue)
     app.setPalette(qp)
     return app
 
